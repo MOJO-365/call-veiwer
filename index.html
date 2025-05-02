@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Retell Call Viewer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background-color: #f4f6f8;
+      color: #2f3542;
+      padding: 2rem;
+    }
+    .container {
+      max-width: 1200px;
+      margin: auto;
+      background: linear-gradient(to bottom right, #ffffff, #fdfdfd);
+      padding: 3rem 3.5rem;
+      border-radius: 18px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      text-align: center;
+      font-size: 2.5rem;
+      font-weight: 600;
+      margin-bottom: 2rem;
+      color: #3742fa;
+    }
+    .input-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 2rem;
+      flex-wrap: wrap;
+    }
+    .input-container input {
+      padding: 0.8rem;
+      font-size: 1.1rem;
+      border: 2px solid #ddd;
+      border-radius: 10px;
+      width: 300px;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+    .input-container button {
+      padding: 0.8rem 1.2rem;
+      font-size: 1.1rem;
+      margin-left: 1rem;
+      margin-top: 0.5rem;
+      border-radius: 10px;
+      background-color: #3742fa;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    .input-container button:hover {
+      background-color: #2c39f5;
+    }
+    .cards-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 2rem;
+      margin-top: 2rem;
+    }
+    .card {
+      background-color: #fafcff;
+      padding: 1.5rem;
+      border-radius: 12px;
+      border: 1px solid #e0e6ed;
+      transition: transform 0.3s ease;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+    .card:hover { transform: translateY(-10px); }
+    .card .info {
+      font-weight: bold;
+      color: #636e72;
+    }
+    .error {
+      color: #e74c3c;
+      font-weight: bold;
+      margin-top: 1rem;
+      text-align: center;
+    }
+    .popup-table {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 2rem;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+      z-index: 1001;
+      max-height: 80%;
+      overflow-y: auto;
+      width: 80%;
+      border-radius: 16px;
+    }
+    .popup-table table {
+      width: 100%;
+      border-collapse: collapse;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .popup-table th, .popup-table td {
+      padding: 1rem;
+      border: 1px solid #e0e6ed;
+      text-align: left;
+    }
+    .popup-table th {
+      background-color: #3742fa;
+      color: white;
+    }
+    .popup-table tr:nth-child(even) { background-color: #f4f6f8; }
+    .popup-table tr:hover { background-color: #e6f0ff; }
+    .close-icon {
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: #3742fa;
+      cursor: pointer;
+      padding: 0 12px;
+      transition: color 0.2s ease;
+    }
+    .close-icon:hover { color: #e74c3c; }
+    audio {
+      width: 100%;
+      margin-top: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      background: #f8f9fa;
+      padding: 0.5rem;
+    }
+    .overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(255, 255, 255, 0.8);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .spinner {
+      border: 6px solid rgba(0, 0, 0, 0.1);
+      border-top: 6px solid #3742fa;
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .pagination {
+      display: flex;
+      justify-content: center;
+      margin-top: 2rem;
+      gap: 1rem;
+    }
+    .pagination button {
+      padding: 0.6rem 1rem;
+      font-size: 1rem;
+      border-radius: 8px;
+      border: none;
+      background-color: #3742fa;
+      color: white;
+      cursor: pointer;
+    }
+    .pagination button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+    @media (max-width: 768px) {
+      h1 { font-size: 2rem; }
+      .cards-container {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      }
+    }
+
+    /* To highlight "To Number" */
+    .highlight {
+      background-color: #dee487;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="overlay" id="loadingOverlay"><div class="spinner"></div></div>
+  <div class="container">
+    <h1>📞 Retell Call Viewer</h1>
+    <div class="input-container">
+      <input id="toNumberInput" type="text" placeholder="Enter Number (e.g. +61412345678)" value="+61" oninput="validatePhoneNumber()"/>
+      <button id="searchButton" onclick="searchCalls()" disabled>Search</button>
+    </div>
+    <div id="result" class="cards-container"></div>
+    <div class="pagination">
+      <button id="prevBtn" onclick="prevPage()" disabled>Previous</button>
+      <button id="nextBtn" onclick="nextPage()" disabled>Next</button>
+    </div>
+  </div>
+
+  <!-- Popup Table -->
+  <div id="popupTable" class="popup-table">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+      <h2>Call Details</h2>
+      <span class="close-icon" onclick="closePopup()">×</span>
+    </div>
+    <table id="detailsTable"></table>
+    <audio id="callRecording" controls>
+      <p>Your browser does not support the audio element.</p>
+    </audio>
+  </div>
+
+  <script>
+    const resultDiv = document.getElementById('result');
+    const toNumberInput = document.getElementById('toNumberInput');
+    const searchButton = document.getElementById('searchButton');
+    const popupTable = document.getElementById('popupTable');
+    const detailsTable = document.getElementById('detailsTable');
+    const loadingOverlay = document.getElementById('loadingOverlay');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const apiUrl = 'https://api.retellai.com/v2/list-calls';
+    const apiKey = 'key_e474fc275a900aab9c7bcba6be4e';
+
+    let offset = 0;
+    const limit = 10;
+    let currentToNumber = '';
+
+    function formatTimestamp(timestamp) {
+      return new Date(timestamp).toLocaleString();
+    }
+
+    async function fetchCalls() {
+      loadingOverlay.style.display = 'flex';
+      resultDiv.innerHTML = '';
+      try {
+        const headers = {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        };
+
+        const body = {
+          sort_order: "descending",
+          limit,
+          offset
+        };
+
+        if (currentToNumber) {
+          body.filter_criteria = {
+            from_number: [],
+            to_number: [currentToNumber]
+          };
+        }
+
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(body)
+        });
+
+        const data = await response.json();
+        displayCalls(data);
+        prevBtn.disabled = offset === 0;
+        nextBtn.disabled = data.length < limit;
+      } catch (err) {
+        console.error(err);
+        resultDiv.innerHTML = '<div class="error">❌ Failed to load call data.</div>';
+      } finally {
+        loadingOverlay.style.display = 'none';
+      }
+    }
+
+    function displayCalls(data) {
+      if (!data || data.length === 0) {
+        resultDiv.innerHTML = '<div class="error">❌ No calls found.</div>';
+        prevBtn.disabled = true;
+        nextBtn.disabled = true;
+        return;
+      }
+
+      resultDiv.innerHTML = '';
+      data.forEach(call => {
+        const timestamp = formatTimestamp(call.start_timestamp);
+        const duration = Math.round(call.duration_ms / 1000) + ' seconds';
+        const sentiment = call.call_analysis ? call.call_analysis.user_sentiment : 'Unknown';
+
+        const card = document.createElement('div');
+        card.classList.add('card');
+        card.innerHTML = `
+          <div class="info">
+            <span class="highlight">${call.to_number}</span><br><br>
+            <strong>Call Status:</strong> ${call.call_status}<br>
+            <strong>Start Time:</strong> ${timestamp}<br>
+            <strong>Duration:</strong> ${duration}<br>
+            <strong>Sentiment:</strong> ${sentiment}
+          </div>
+        `;
+        card.onclick = () => openPopup(call);
+        resultDiv.appendChild(card);
+      });
+    }
+
+    function openPopup(call) {
+      const customData = call.call_analysis?.custom_analysis_data || {};
+      let customRows = '';
+
+      if (typeof customData === 'object') {
+        customRows = Object.entries(customData).map(([key, val]) =>
+          `<tr><td><strong>${key.replace(/_/g, ' ')}</strong></td><td>${val}</td></tr>`
+        ).join('');
+      }
+
+      detailsTable.innerHTML = `
+        <tr><th>Field</th><th>Value</th></tr>
+        <tr><td><strong>Call Status</strong></td><td>${call.call_status}</td></tr>
+        <tr><td><strong>Start Time</strong></td><td>${formatTimestamp(call.start_timestamp)}</td></tr>
+        <tr><td><strong>Duration</strong></td><td>${Math.round(call.duration_ms / 1000)} seconds</td></tr>
+        <tr><td><strong>Sentiment</strong></td><td>${call.call_analysis?.user_sentiment || 'Unknown'}</td></tr>
+        <tr><td><strong>Summary</strong></td><td>${call.call_analysis?.call_summary || 'No summary available'}</td></tr>
+        ${customRows}
+      `;
+
+      const audio = document.getElementById('callRecording');
+      if (call.recording_url) {
+        audio.src = call.recording_url;
+        audio.load();
+      }
+      popupTable.style.display = 'block';
+    }
+
+    function closePopup() {
+      popupTable.style.display = 'none';
+      document.getElementById('callRecording').pause();
+    }
+
+    function searchCalls() {
+      currentToNumber = toNumberInput.value.trim();
+      offset = 0;
+      fetchCalls();
+    }
+
+    function prevPage() {
+      if (offset >= limit) {
+        offset -= limit;
+        fetchCalls();
+      }
+    }
+
+    function nextPage() {
+      offset += limit;
+      fetchCalls();
+    }
+
+    function validatePhoneNumber() {
+      const phoneNumber = toNumberInput.value.trim();
+      const validPhoneNumberPattern = /^\+?\d{9,15}$/;
+
+      // Reset error and success messages
+      searchButton.disabled = true;
+
+      if (validPhoneNumberPattern.test(phoneNumber)) {
+        searchButton.disabled = false;
+      } else {
+        searchButton.disabled = true;
+      }
+    }
+  </script>
+</body>
+</html>
