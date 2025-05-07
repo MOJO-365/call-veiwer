@@ -170,7 +170,7 @@ export default function CallViewer() {
             ))}
           </tbody>
         </table>
-        {recording_url && <audio controls src={recording_url} />}
+        // {recording_url && <audio controls src={recording_url} />}
       </div>
     );
   };
